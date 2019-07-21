@@ -1250,6 +1250,9 @@ void T_DrawView(int StartX, int StartY)
 	if (dropGoldFlag) {
 		DrawGoldSplit(dropGoldValue);
 	}
+	if (enterPremiumFlag) {
+		DrawPremiumLevel(premiumItemLevel);
+	}
 	if (helpflag) {
 		DrawHelp();
 	}

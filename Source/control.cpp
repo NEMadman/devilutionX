@@ -8,6 +8,7 @@ BYTE *pDurIcons;
 BYTE *pChrButtons;
 BOOL drawhpflag; // idb
 BOOL dropGoldFlag;
+BOOL enterPremiumFlag;
 int panbtn[8];
 int chrbtn[4];
 BYTE *pMultiBtns;
@@ -16,6 +17,7 @@ BYTE *pChrPanel;
 int lvlbtndown; // weak
 char sgszTalkSave[8][80];
 int dropGoldValue; // idb
+int premiumItemLevel; // idb
 BOOL drawmanaflag; // idb
 BOOL chrbtnactive;
 char sgszTalkMsg[MAX_SEND_STR_LEN];
@@ -1185,7 +1187,9 @@ void InitControlPan()
 	pQLogCel = LoadFileInMem("Data\\Quest.CEL", NULL);
 	pGBoxBuff = LoadFileInMem("CtrlPan\\Golddrop.cel", NULL);
 	dropGoldFlag = FALSE;
+	enterPremiumFlag = FALSE;
 	dropGoldValue = 0;
+	premiumItemLevel = 0;
 	initialDropGoldValue = 0;
 	initialDropGoldIndex = 0;
 	nGoldFrame = 1;
@@ -2308,6 +2312,27 @@ char *get_pieces_str(int nGold)
 	return result;
 }
 
+void DrawPremiumLevel(int amount)
+{
+	int screen_x, i;
+
+	screen_x = 0;
+	CelDecodeOnly(415, 338, pGBoxBuff, 1, 261);
+	ADD_PlrStringXY(366, 87, 600, "What level items?", COL_GOLD);
+	if (amount > 0) {
+		sprintf(tempstr, "%u", amount);
+		PrintGameStr(388, 140, tempstr, 0);
+		for (i = 0; i < tempstr[i]; i++) {
+			screen_x += fontkern[fontframe[gbFontTransTbl[(BYTE)tempstr[i]]]] + 1;
+		}
+		screen_x += 452;
+	} else {
+		screen_x = 450;
+	}
+	CelDecodeOnly(screen_x, 300, pCelBuff, nGoldFrame, 12);
+	nGoldFrame = (nGoldFrame & 7) + 1;
+}
+
 void DrawGoldSplit(int amount)
 {
 	int screen_x, i;
@@ -2332,6 +2357,47 @@ void DrawGoldSplit(int amount)
 	CelDecodeOnly(screen_x, 300, pCelBuff, nGoldFrame, 12);
 	nGoldFrame = (nGoldFrame & 7) + 1;
 }
+
+void control_premium_level(char vkey)
+{
+	char input[6];
+
+	if (plr[myplr]._pHitPoints >> 6 <= 0) {
+		enterPremiumFlag = FALSE;
+		return;
+	}
+
+	memset(input, 0, sizeof(input));
+	_itoa(premiumItemLevel, input, 10);
+	if (vkey == VK_RETURN) {
+		if (premiumItemLevel > 0)
+        {
+            SpawnPremium(premiumItemLevel);
+            enterPremiumFlag = FALSE;
+        }
+		premiumItemLevel = 0;
+	} else if (vkey == VK_ESCAPE) {
+		enterPremiumFlag = FALSE;
+		premiumItemLevel = 0;
+	} else if (vkey == VK_BACK) {
+        if( strlen(input) )
+        {
+		    input[strlen(input) - 1] = '\0';
+    		premiumItemLevel = atoi(input);
+        }
+	} else if (vkey - '0' >= 0 && vkey - '0' <= 9) {
+		if( premiumItemLevel )
+        {
+		    input[strlen(input)] = vkey;
+    		if (strlen(input) > strlen(input))
+    			return;
+		} else {
+			input[0] = vkey;
+		}
+		premiumItemLevel = atoi(input);
+	}
+}
+
 
 void control_drop_gold(char vkey)
 {

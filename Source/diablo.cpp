@@ -10,6 +10,9 @@ int glMid2Seed[NUMLEVELS];
 int gnLevelTypeTbl[NUMLEVELS];
 int MouseY;             // idb
 int MouseX;             // idb
+short WheelY;             // idb
+short WheelX;             // idb
+short WheelD;             // idb
 BOOL gbGameLoopStartup; // idb
 DWORD glSeedTbl[NUMLEVELS];
 BOOL gbRunGame;
@@ -476,6 +479,7 @@ void diablo_init_screen()
 
 	MouseX = SCREEN_WIDTH / 2;
 	MouseY = SCREEN_HEIGHT / 2;
+	WheelX = WheelY = WheelD = 0;
 	ScrollInfo._sdx = 0;
 	ScrollInfo._sdy = 0;
 	ScrollInfo._sxoff = 0;
@@ -691,6 +695,12 @@ LRESULT CALLBACK DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 LRESULT CALLBACK GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg) {
+    case WM_MOUSEWHEEL:
+		WheelX = (short)LOWORD(lParam);
+		WheelY = (short)HIWORD(lParam);
+		WheelD = (short)wParam;
+		MouseWheelScroll(WheelY);
+		break;
 	case WM_KEYDOWN:
 		PressKey(wParam);
 		return 0;
@@ -787,6 +797,18 @@ LRESULT CALLBACK GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	return MainWndProc(hWnd, uMsg, wParam, lParam);
 }
+
+BOOL MouseWheelScroll(short wheel)
+{
+    if( !deathflag )
+    {
+        if( stextflag )
+        {
+            ScrollStore(wheel);
+        }
+    }
+}
+
 // 52571C: using guessed type int drawpanflag;
 // 525748: using guessed type char sgbMouseDown;
 // 679660: using guessed type char gbMaxPlayers;
@@ -1274,6 +1296,10 @@ void PressChar(int vkey)
 	}
 	if (doomflag) {
 		doom_close();
+		return;
+	}
+	if (enterPremiumFlag) {
+		control_premium_level(vkey);
 		return;
 	}
 	if (dropGoldFlag) {

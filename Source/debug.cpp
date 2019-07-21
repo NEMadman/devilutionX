@@ -94,6 +94,19 @@ void CheckDungeonClear()
 	}
 }
 
+void FillGoldCheat()
+{
+	int i, ni;
+
+	for (i = 0; i < 40; i++) {
+        if( plr[myplr].InvList[i]._itype == ITYPE_GOLD )
+        {
+			plr[myplr].InvList[i]._ivalue = GOLD_MAX_LIMIT;
+			plr[myplr].InvList[i]._iCurs = 6;
+		}
+	}
+}
+
 #ifdef _DEBUG
 void GiveGoldCheat()
 {

@@ -394,6 +394,24 @@ void StoreAutoPlace()
 	}
 }
 
+void S_StartCheat()
+{
+	stextsize = 0;
+	stextscrl = FALSE;
+	AddSText(0, 1, 1, "Welcome to the", COL_GOLD, 0);
+	AddSText(0, 3, 1, "Cheat Menu", COL_GOLD, 0);
+	AddSText(0, 7, 1, "Would you like to:", COL_GOLD, 0);
+	AddSText(0, 10, 1, "Max gold Inv Slot", COL_WHITE, 1);
+	AddSText(0, 12, 1, "New Items at Level", COL_WHITE, 1);
+	AddSText(0, 14, 1, "Generate Rings", COL_WHITE, 1);
+	AddSText(0, 16, 1, "Generate Amulets", COL_WHITE, 1);
+	AddSText(0, 18, 1, "Generate Helms", COL_WHITE, 1);
+	AddSText(0, 20, 1, "Generate Armor", COL_WHITE, 1);
+	AddSText(0, 22, 1, "Exit Cheat Menu", COL_WHITE, 1);
+	AddSLine(5);
+	storenumh = 22;
+}
+
 void S_StartSmith()
 {
 	stextsize = 0;
@@ -1439,11 +1457,16 @@ void StartStore(char s)
 		chrflag = 0;
 		questlog = FALSE;
 		dropGoldFlag = FALSE;
+		enterPremiumFlag = FALSE;
 		ClearSText(0, 24);
 		ReleaseStoreBtn();
 		switch (t) {
 		case STORE_SMITH:
 			S_StartSmith();
+			break;
+		case STORE_CHEAT:
+			// Mikey StartStore StartCheat
+			S_StartCheat();
 			break;
 		case STORE_SBUY:
 			if (storenumh > 0)
@@ -1584,6 +1607,7 @@ void STextESC()
 	} else {
 		switch (stextflag) {
 		case STORE_SMITH:
+		case STORE_CHEAT:
 		case STORE_WITCH:
 		case STORE_BOY:
 		case STORE_BBOY:
@@ -1750,6 +1774,40 @@ void STextNext()
 		} else {
 			stextsel = stextdown;
 		}
+	}
+}
+
+void S_CheatEnter()
+{
+	switch (stextsel) {
+	case 10:
+		FillGoldCheat();
+		stextflag = STORE_NONE;
+		break;
+	case 12:
+        // Mike
+        enterPremiumFlag = TRUE;
+		//stextflag = STORE_NONE;
+		break;
+    case 14:
+        SpawnSpecificPremium(premiumItemLevel, ITYPE_RING);
+		stextflag = STORE_NONE;
+        break;
+    case 16:
+        SpawnSpecificPremium(premiumItemLevel, ITYPE_AMULET);
+		stextflag = STORE_NONE;
+        break;
+    case 18:
+        SpawnSpecificPremium(premiumItemLevel, ITYPE_HELM);
+		stextflag = STORE_NONE;
+        break;
+    case 20:
+        SpawnSpecificPremium(premiumItemLevel, ITYPE_HARMOR);
+		stextflag = STORE_NONE;
+        break;
+	case 22:
+		stextflag = STORE_NONE;
+		break;
 	}
 }
 
@@ -2673,6 +2731,9 @@ void STextEnter()
 		case STORE_SMITH:
 			S_SmithEnter();
 			break;
+		case STORE_CHEAT:
+			S_CheatEnter();
+			break;
 		case STORE_SPBUY:
 			S_SPBuyEnter();
 			break;
@@ -2741,6 +2802,18 @@ void STextEnter()
 			break;
 		}
 	}
+}
+
+void ScrollStore(short wheel)
+{
+    if( wheel < 0 )
+    {
+        STextDown();
+    }
+    else if( wheel > 0 )
+    {
+        STextUp();
+    }
 }
 
 void CheckStoreBtn()

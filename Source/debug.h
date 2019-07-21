@@ -15,6 +15,7 @@ void seed_desync_index_set();
 void seed_desync_check(int seed);
 #endif
 void CheckDungeonClear();
+void FillGoldCheat();
 #ifdef _DEBUG
 void GiveGoldCheat();
 void StoresCheat();

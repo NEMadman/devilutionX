@@ -10,6 +10,11 @@ void PackPlayer(PkPlayerStruct *pPack, int pnum, BOOL manashield)
 	ItemStruct *pi;
 	PkItemStruct *pki;
 
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "\nPack\n");
+    DumpRingInv(pnum);
+#endif
+
 	memset(pPack, 0, sizeof(*pPack));
 	pPlayer = &plr[pnum];
 	pPack->destAction = pPlayer->destAction;
@@ -95,6 +100,16 @@ void PackItem(PkItemStruct *id, ItemStruct *is)
 			id->wValue = is->_ivalue | (is->_iName[18] << 8) | ((is->_iCurs - 19) << 6);
 			id->dwBuff = is->_iName[22] | ((is->_iName[21] | ((is->_iName[20] | (is->_iName[19] << 8)) << 8)) << 8);
 		} else {
+			if( is->_itype == ITYPE_AMULET ||
+				is->_itype == ITYPE_RING ||
+				is->_itype == ITYPE_HARMOR ||
+				is->_itype == ITYPE_MARMOR ||
+				is->_itype == ITYPE_LARMOR ||
+				is->_itype == ITYPE_HELM )
+			{
+				id->dwBuff = is->_iCharges;
+			}
+
 			id->iSeed = is->_iSeed;
 			id->iCreateInfo = is->_iCreateInfo;
 			id->bId = is->_iIdentified + 2 * is->_iMagical;
@@ -217,6 +232,11 @@ void UnPackPlayer(PkPlayerStruct *pPack, int pnum, BOOL killok)
 	pPlayer->pDiabloKillLevel = pPack->pDiabloKillLevel;
 	pPlayer->pBattleNet = pPack->pBattleNet;
 	pPlayer->pManaShield = pPack->pManaShield;
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "\nUnpack\n");
+    DumpRingInv(pnum);
+#endif
 }
 
 // Note: last slot of item[MAXITEMS+1] used as temporary buffer
@@ -239,7 +259,14 @@ void UnPackItem(PkItemStruct *is, ItemStruct *id)
 			    is->wValue,
 			    is->dwBuff);
 		} else {
-			RecreateItem(MAXITEMS, is->idx, is->iCreateInfo, is->iSeed, is->wValue);
+			if( is->dwBuff )
+			{
+				RecreateSpecificItem(MAXITEMS, is->idx, is->iCreateInfo, is->iSeed, is->wValue, is->dwBuff);
+			}
+			else
+			{
+				RecreateItem(MAXITEMS, is->idx, is->iCreateInfo, is->iSeed, is->wValue);
+			}
 			item[MAXITEMS]._iMagical = is->bId >> 1;
 			item[MAXITEMS]._iIdentified = is->bId & 1;
 			item[MAXITEMS]._iDurability = is->bDur;

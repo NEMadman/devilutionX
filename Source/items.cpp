@@ -2219,9 +2219,33 @@ void CreateTypeItem(int x, int y, BOOL onlygood, int itype, int imisc, BOOL send
 	}
 }
 
+void RecreateSpecificItem(int ii, int idx, unsigned short ic, int iseed, int ivalue, int type)
+{
+    if( idx )
+    {
+        if( ic && ic & 0x7C00 )
+        {
+            RecreateTownSpecificItem(ii, idx, ic, iseed, ivalue, type);
+        }
+        else
+        {
+            RecreateItem(ii, idx, ic, iseed, ivalue);
+        }
+    }
+    else
+    {
+        RecreateItem(ii, idx, ic, iseed, ivalue);
+    }
+}
+
 void RecreateItem(int ii, int idx, WORD icreateinfo, int iseed, int ivalue)
 {
 	int uper, onlygood, recreate, pregen;
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "Recreateitem called\n");
+    dumpstack();
+#endif
 
 	if (!idx) {
 		SetPlrHandItem(&item[ii], IDI_GOLD);
@@ -3416,10 +3440,35 @@ BOOL PremiumItemOk(int i)
 	return rv;
 }
 
+int RndSpecificPremiumItem(int minlvl, int maxlvl, int type)
+{
+	int i, ri;
+	int ril[512];
+
+	ri = 0;
+	for (i = 1; AllItemsList[i].iLoc != ILOC_INVALID; i++) {
+		if (AllItemsList[i].iRnd) {
+			if (AllItemsList[i].itype == type) {
+				if (AllItemsList[i].iMinMLvl >= minlvl && AllItemsList[i].iMinMLvl <= maxlvl) {
+					ril[ri] = i;
+					ri++;
+				}
+			}
+		}
+	}
+
+	return ril[random(50, ri)] + 1;
+}
+
 int RndPremiumItem(int minlvl, int maxlvl)
 {
 	int i, ri;
 	int ril[512];
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "RndPremiumItem called\n");
+    dumpstack();
+#endif
 
 	ri = 0;
 	for (i = 1; AllItemsList[i].iLoc != ILOC_INVALID; i++) {
@@ -3434,6 +3483,31 @@ int RndPremiumItem(int minlvl, int maxlvl)
 	}
 
 	return ril[random(50, ri)] + 1;
+}
+
+void SpawnOneSpecificPremium(int i, int plvl, int type)
+{
+	int itype;
+	ItemStruct holditem;
+
+	holditem = item[0];
+	if (plvl > 30)
+		plvl = 30;
+	if (plvl < 1)
+		plvl = 1;
+	do {
+		item[0]._iSeed = GetRndSeed();
+		SetRndSeed(item[0]._iSeed);
+		itype = RndSpecificPremiumItem(plvl >> 2, plvl, type) - 1;
+		GetItemAttrs(0, itype, plvl);
+		GetItemBonus(0, itype, plvl >> 1, plvl, 1);
+	} while (item[0]._iIvalue > 140000);
+    item[0]._iCharges = type;
+	premiumitem[i] = item[0];
+	premiumitem[i]._iCreateInfo = plvl | 0x800;
+	premiumitem[i]._iIdentified = TRUE;
+	premiumitem[i]._iStatFlag = StoreStatOk(&premiumitem[i]);
+	item[0] = holditem;
 }
 
 void SpawnOnePremium(int i, int plvl)
@@ -3453,6 +3527,7 @@ void SpawnOnePremium(int i, int plvl)
 		GetItemAttrs(0, itype, plvl);
 		GetItemBonus(0, itype, plvl >> 1, plvl, 1);
 	} while (item[0]._iIvalue > 140000);
+	item[0]._iCharges = 0;
 	premiumitem[i] = item[0];
 	premiumitem[i]._iCreateInfo = plvl | 0x800;
 	premiumitem[i]._iIdentified = TRUE;
@@ -3460,14 +3535,29 @@ void SpawnOnePremium(int i, int plvl)
 	item[0] = holditem;
 }
 
+void SpawnSpecificPremium(int lvl, int type)
+{
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		SpawnOneSpecificPremium(i, (enterPremiumFlag ? lvl : (premiumlevel + premiumlvladd[i]) ), type);
+	}
+	numpremium = 6;
+}
+
 void SpawnPremium(int lvl)
 {
 	int i;
 
-	if (numpremium < 6) {
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "SpawnPremium called\n");
+    dumpstack();
+#endif
+
+	if (numpremium < 6 || enterPremiumFlag == TRUE ) {
 		for (i = 0; i < 6; i++) {
-			if (premiumitem[i]._itype == ITYPE_NONE)
-				SpawnOnePremium(i, premiumlevel + premiumlvladd[i]);
+			if (premiumitem[i]._itype == ITYPE_NONE || enterPremiumFlag == TRUE )
+				SpawnOnePremium(i, (enterPremiumFlag ? lvl : (premiumlevel + premiumlvladd[i]) ));
 		}
 		numpremium = 6;
 	}
@@ -3797,6 +3887,21 @@ void RecreateSmithItem(int ii, int idx, int lvl, int iseed)
 	item[ii]._iIdentified = TRUE;
 }
 
+void RecreatePremiumSpecificItem(int ii, int idx, int lvl, int iseed, int type)
+{
+	int itype;
+
+	SetRndSeed(iseed);
+	itype = RndSpecificPremiumItem(lvl >> 2, lvl, type) - 1;
+	GetItemAttrs(ii, itype, lvl);
+	GetItemBonus(ii, itype, lvl >> 1, lvl, 1);
+
+    item[ii]._iCharges = type;
+	item[ii]._iCreateInfo = lvl | 0x800;
+	item[ii]._iSeed = iseed;
+	item[ii]._iIdentified = TRUE;
+}
+
 void RecreatePremiumItem(int ii, int idx, int plvl, int iseed)
 {
 	int itype;
@@ -3806,6 +3911,7 @@ void RecreatePremiumItem(int ii, int idx, int plvl, int iseed)
 	GetItemAttrs(ii, itype, plvl);
 	GetItemBonus(ii, itype, plvl >> 1, plvl, 1);
 
+	item[ii]._iCharges = 0;
 	item[ii]._iCreateInfo = plvl | 0x800;
 	item[ii]._iSeed = iseed;
 	item[ii]._iIdentified = TRUE;
@@ -3862,6 +3968,17 @@ void RecreateHealerItem(int ii, int idx, int lvl, int iseed)
 	item[ii]._iCreateInfo = lvl | 0x4000;
 	item[ii]._iSeed = iseed;
 	item[ii]._iIdentified = TRUE;
+}
+
+void RecreateTownSpecificItem(int ii, int idx, unsigned short icreateinfo, int iseed, int ivalue, int type)
+{
+#ifdef DEBUG_MIKEY
+    dumpstack();
+#endif
+	if (icreateinfo & 0x800)
+		RecreatePremiumSpecificItem(ii, idx, icreateinfo & 0x3F, iseed, type);
+    else
+        RecreateTownItem(ii, idx, icreateinfo, iseed, ivalue);
 }
 
 void RecreateTownItem(int ii, int idx, WORD icreateinfo, int iseed, int ivalue)
@@ -4033,6 +4150,10 @@ void SetItemRecord(int nSeed, WORD wCI, int nIndex)
 {
 	DWORD dwTicks;
 
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "SetItemRecord: (nSeed: %d, wCI: %d, nIndex: %d)\n", nSeed, wCI, nIndex);
+#endif
+
 	dwTicks = GetTickCount();
 
 	if (gnNumGetRecords == MAXITEMS) {
@@ -4050,6 +4171,10 @@ void PutItemRecord(int nSeed, WORD wCI, int nIndex)
 {
 	int i;
 	DWORD dwTicks;
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "PutItemRecord: (nSeed: %d, wCI: %d, nIndex: %d)\n", nSeed, wCI, nIndex);
+#endif
 
 	dwTicks = GetTickCount();
 

@@ -2,6 +2,11 @@
 #include "../3rdParty/Storm/Source/storm.h"
 #include "../DiabloUI/diabloui.h"
 
+#ifdef DEBUG_MIKEY
+#include <execinfo.h>
+#include <stdio.h>
+#endif
+
 DEVILUTION_BEGIN_NAMESPACE
 
 static DWORD sgdwOwnerWait;
@@ -21,6 +26,21 @@ BOOL deltaload;
 BYTE gbBufferMsgs;
 int pkt_counter;
 
+#ifdef DEBUG_MIKEY
+void dumpstack(void)
+{
+    void* callstack[128];
+
+    int i, frames = backtrace(callstack, 128);
+    char** strs = backtrace_symbols(callstack, frames);
+    for (i = 0; i < frames; ++i)
+    {
+        fprintf(stderr, "%s\n", strs[i]);
+    }
+    free(strs);
+}
+#endif
+
 void msg_send_drop_pkt(int pnum, int reason)
 {
 	TFakeDropPlr cmd;
@@ -35,6 +55,10 @@ void msg_send_packet(int pnum, const void *packet, DWORD dwSize)
 {
 	TMegaPkt *packeta;
 	TFakeCmdPlr cmd;
+
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "msg_send_packet.\n");
+#endif
 
 	if (pnum != sgnCurrMegaPlayer) {
 		sgnCurrMegaPlayer = pnum;
@@ -413,6 +437,11 @@ void DeltaAddItem(int ii)
 	if (gbMaxPlayers == 1) {
 		return;
 	}
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "DeltaAddItem\n");
+#endif
+
 	pD = sgLevels[currlevel].item;
 	for (i = 0; i < MAXITEMS; i++, pD++) {
 		if (pD->bCmd != 0xFF
@@ -440,6 +469,19 @@ void DeltaAddItem(int ii)
 			pD->bCh = item[ii]._iCharges;
 			pD->bMCh = item[ii]._iMaxCharges;
 			pD->wValue = item[ii]._ivalue;
+			if( item[ii]._itype == ITYPE_AMULET ||
+				item[ii]._itype == ITYPE_RING ||
+				item[ii]._itype == ITYPE_HARMOR ||
+				item[ii]._itype == ITYPE_MARMOR ||
+				item[ii]._itype == ITYPE_LARMOR ||
+				item[ii]._itype == ITYPE_HELM )
+			{
+				pD->dwBuff = item[ii]._iCharges;
+			}
+			else
+			{
+				pD->dwBuff = 0;
+			}
 			return;
 		}
 	}
@@ -469,6 +511,10 @@ void DeltaLoadLevel()
 	if (gbMaxPlayers == 1) {
 		return;
 	}
+
+#ifdef DEBUG_MIKEY
+        fprintf(stderr,"DeltaLoadLevel.\n");
+#endif
 
 	deltaload = TRUE;
 	if (currlevel != 0) {
@@ -545,12 +591,29 @@ void DeltaLoadLevel()
 					    sgLevels[currlevel].item[i].wValue,
 					    sgLevels[currlevel].item[i].dwBuff);
 				} else {
-					RecreateItem(
-					    ii,
-					    sgLevels[currlevel].item[i].wIndx,
-					    sgLevels[currlevel].item[i].wCI,
-					    sgLevels[currlevel].item[i].dwSeed,
-					    sgLevels[currlevel].item[i].wValue);
+#ifdef DEBUG_MIKEY
+					fprintf(stderr, "Delta_Load_Level - RecreateItem\n");
+					dump_pitem(&(sgLevels[currlevel].item[i]));
+#endif
+					if( sgLevels[currlevel].item[i].dwBuff )
+					{
+						RecreateSpecificItem(
+							ii,
+							sgLevels[currlevel].item[i].wIndx,
+							sgLevels[currlevel].item[i].wCI,
+							sgLevels[currlevel].item[i].dwSeed,
+							sgLevels[currlevel].item[i].wValue,
+							sgLevels[currlevel].item[i].dwBuff);
+					}
+					else
+					{
+						RecreateItem(
+							ii,
+							sgLevels[currlevel].item[i].wIndx,
+							sgLevels[currlevel].item[i].wCI,
+							sgLevels[currlevel].item[i].dwSeed,
+							sgLevels[currlevel].item[i].wValue);
+					}
 					if (sgLevels[currlevel].item[i].bId)
 						item[ii]._iIdentified = TRUE;
 					item[ii]._iDurability = sgLevels[currlevel].item[i].bDur;
@@ -771,6 +834,20 @@ void NetSendCmdGItem(BOOL bHiPri, BYTE bCmd, BYTE mast, BYTE pnum, BYTE ii)
 		cmd.wValue = item[ii]._ivalue | (item[ii]._iName[18] << 8) | ((item[ii]._iCurs - 19) << 6);
 		cmd.dwBuff = item[ii]._iName[22] | ((item[ii]._iName[21] | ((item[ii]._iName[20] | (item[ii]._iName[19] << 8)) << 8)) << 8);
 	} else {
+		if( item[ii]._itype == ITYPE_AMULET ||
+			item[ii]._itype == ITYPE_RING ||
+			item[ii]._itype == ITYPE_HARMOR ||
+			item[ii]._itype == ITYPE_MARMOR ||
+			item[ii]._itype == ITYPE_LARMOR ||
+			item[ii]._itype == ITYPE_HELM )
+			{
+				cmd.dwBuff = item[ii]._iCharges;
+			}
+			else
+			{
+				cmd.dwBuff = 0;
+			}
+
 		cmd.wCI = item[ii]._iCreateInfo;
 		cmd.dwSeed = item[ii]._iSeed;
 		cmd.bId = item[ii]._iIdentified;
@@ -849,6 +926,10 @@ void NetSendCmdPItem(BOOL bHiPri, BYTE bCmd, BYTE x, BYTE y)
 {
 	TCmdPItem cmd;
 
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "NetSendCmdPItem.\n");
+#endif
+
 	cmd.bCmd = bCmd;
 	cmd.x = x;
 	cmd.y = y;
@@ -865,6 +946,23 @@ void NetSendCmdPItem(BOOL bHiPri, BYTE bCmd, BYTE x, BYTE y)
 		cmd.wValue = plr[myplr].HoldItem._ivalue | (plr[myplr].HoldItem._iName[18] << 8) | ((plr[myplr].HoldItem._iCurs - 19) << 6);
 		cmd.dwBuff = plr[myplr].HoldItem._iName[22] | ((plr[myplr].HoldItem._iName[21] | ((plr[myplr].HoldItem._iName[20] | (plr[myplr].HoldItem._iName[19] << 8)) << 8)) << 8);
 	} else {
+#ifdef DEBUG_MIKEY
+        dumpstack();
+#endif
+		if( plr[myplr].HoldItem._itype == ITYPE_AMULET ||
+			plr[myplr].HoldItem._itype == ITYPE_RING ||
+			plr[myplr].HoldItem._itype == ITYPE_HARMOR ||
+			plr[myplr].HoldItem._itype == ITYPE_MARMOR ||
+			plr[myplr].HoldItem._itype == ITYPE_LARMOR ||
+			plr[myplr].HoldItem._itype == ITYPE_HELM )
+			{
+				cmd.dwBuff = plr[myplr].HoldItem._iCharges;
+			}
+			else
+			{
+				cmd.dwBuff = 0;
+			}
+
 		cmd.wCI = plr[myplr].HoldItem._iCreateInfo;
 		cmd.dwSeed = plr[myplr].HoldItem._iSeed;
 		cmd.bId = plr[myplr].HoldItem._iIdentified;
@@ -930,6 +1028,20 @@ void NetSendCmdDItem(BOOL bHiPri, int ii)
 		cmd.wValue = item[ii]._ivalue | (item[ii]._iName[18] << 8) | ((item[ii]._iCurs - 19) << 6);
 		cmd.dwBuff = item[ii]._iName[22] | ((item[ii]._iName[21] | ((item[ii]._iName[20] | (item[ii]._iName[19] << 8)) << 8)) << 8);
 	} else {
+		if( item[ii]._itype == ITYPE_AMULET ||
+			item[ii]._itype == ITYPE_RING ||
+			item[ii]._itype == ITYPE_HARMOR ||
+			item[ii]._itype == ITYPE_MARMOR ||
+			item[ii]._itype == ITYPE_LARMOR ||
+			item[ii]._itype == ITYPE_HELM )
+			{
+				cmd.dwBuff = item[ii]._iCharges;
+			}
+			else
+			{
+				cmd.dwBuff = 0;
+			}
+
 		cmd.wCI = item[ii]._iCreateInfo;
 		cmd.dwSeed = item[ii]._iSeed;
 		cmd.bId = item[ii]._iIdentified;
@@ -1212,6 +1324,10 @@ BYTE *DeltaImportItem(BYTE *src, TCmdPItem *dst)
 {
 	int i;
 
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "DeltaImportItem.\n");
+#endif
+
 	for (i = 0; i < MAXITEMS; i++) {
 		if (*src == 0xFF) {
 			memset(dst, 0xFF, sizeof(TCmdPItem));
@@ -1390,6 +1506,10 @@ DWORD On_GOTOGETITEM(TCmd *pCmd, int pnum)
 {
 	TCmdLocParam1 *p = (TCmdLocParam1 *)pCmd;
 
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_GOTOGETITEM.\n");
+#endif
+
 	if (gbBufferMsgs != 1 && currlevel == plr[pnum].plrlevel) {
 		MakePlrPath(pnum, p->x, p->y, FALSE);
 		plr[pnum].destAction = ACTION_PICKUPITEM;
@@ -1402,6 +1522,10 @@ DWORD On_GOTOGETITEM(TCmd *pCmd, int pnum)
 DWORD On_REQUESTGITEM(TCmd *pCmd, int pnum)
 {
 	TCmdGItem *p = (TCmdGItem *)pCmd;
+
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_REQUESTGITEM.\n");
+#endif
 
 	if (gbBufferMsgs != 1 && i_own_level(plr[pnum].plrlevel)) {
 		if (GetItemRecord(p->dwSeed, p->wCI, p->wIndx)) {
@@ -1440,6 +1564,10 @@ DWORD On_GETITEM(TCmd *pCmd, int pnum)
 {
 	TCmdGItem *p = (TCmdGItem *)pCmd;
 
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_GETITEM.\n");
+#endif
+
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
 	else {
@@ -1469,6 +1597,10 @@ BOOL delta_get_item(TCmdGItem *pI, BYTE bLevel)
 	TCmdPItem *pD;
 	int i;
 	BOOL found;
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "delta_get_item\n");
+#endif
 
 	result = TRUE;
 	found = FALSE;
@@ -1540,6 +1672,10 @@ DWORD On_REQUESTAGITEM(TCmd *pCmd, int pnum)
 {
 	TCmdGItem *p = (TCmdGItem *)pCmd;
 
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_REQUESTAGITEM.\n");
+#endif
+
 	if (gbBufferMsgs != 1 && i_own_level(plr[pnum].plrlevel)) {
 		if (GetItemRecord(p->dwSeed, p->wCI, p->wIndx)) {
 			int ii = FindGetItem(p->wIndx, p->wCI, p->dwSeed);
@@ -1561,6 +1697,10 @@ DWORD On_REQUESTAGITEM(TCmd *pCmd, int pnum)
 DWORD On_AGETITEM(TCmd *pCmd, int pnum)
 {
 	TCmdGItem *p = (TCmdGItem *)pCmd;
+
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_AGETITEM.\n");
+#endif
 
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
@@ -1589,6 +1729,10 @@ DWORD On_ITEMEXTRA(TCmd *pCmd, int pnum)
 {
 	TCmdGItem *p = (TCmdGItem *)pCmd;
 
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_ITEMEXTRA.\n");
+#endif
+
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
 	else {
@@ -1603,6 +1747,11 @@ DWORD On_ITEMEXTRA(TCmd *pCmd, int pnum)
 DWORD On_PUTITEM(TCmd *pCmd, int pnum)
 {
 	TCmdPItem *p = (TCmdPItem *)pCmd;
+
+#ifdef DEBUG_MIKEY
+    dumpstack();
+    fprintf(stderr, "On_PUTITEM.\n");
+#endif
 
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
@@ -1627,10 +1776,33 @@ DWORD On_PUTITEM(TCmd *pCmd, int pnum)
 	return sizeof(*p);
 }
 
+void dump_pitem(TCmdPItem *pI)
+{
+    fprintf(stderr, "Dump TCmdPItem\n");
+    fprintf(stderr, "   TCmdPItem->bCmd: 0x%02x\n", pI->bCmd);
+    fprintf(stderr, "      TCmdPItem->x: 0x%02x\n", pI->x);
+    fprintf(stderr, "      TCmdPItem->y: 0x%02x\n", pI->y);
+    fprintf(stderr, "  TCmdPItem->wIndx: 0x%04x\n", pI->wIndx);
+    fprintf(stderr, "    TCmdPItem->wCI: 0x%04x\n", pI->wCI);
+    fprintf(stderr, " TCmdPItem->dwSeed: 0x%08x\n", pI->dwSeed);
+    fprintf(stderr, "    TCmdPItem->bId: 0x%02x\n", pI->bId);
+    fprintf(stderr, "   TCmdPItem->bDur: 0x%02x\n", pI->bDur);
+    fprintf(stderr, "  TCmdPItem->bMDur: 0x%02x\n", pI->bMDur);
+    fprintf(stderr, "    TCmdPItem->bCh: 0x%02x\n", pI->bCh);
+    fprintf(stderr, "   TCmdPItem->bMCh: 0x%02x\n", pI->bMCh);
+    fprintf(stderr, " TCmdPItem->wValue: 0x%04x\n", pI->wValue);
+    fprintf(stderr, " TCmdPItem->dwBuff: 0x%08x\n", pI->dwBuff);
+    fprintf(stderr, "\n");
+}
+
 void delta_put_item(TCmdPItem *pI, int x, int y, BYTE bLevel)
 {
 	int i;
 	TCmdPItem *pD;
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "delta_put_item\n");
+#endif
 
 	if (gbMaxPlayers == 1) {
 		return;
@@ -1653,6 +1825,9 @@ void delta_put_item(TCmdPItem *pI, int x, int y, BYTE bLevel)
 		if (pD->bCmd == 0xFF) {
 			sgbDeltaChanged = TRUE;
 			memcpy(pD, pI, sizeof(TCmdPItem));
+#ifdef DEBUG_MIKEY
+    dump_pitem(pI);
+#endif
 			pD->bCmd = CMD_ACK_PLRINFO;
 			pD->x = x;
 			pD->y = y;
@@ -1670,6 +1845,10 @@ void check_update_plr(int pnum)
 DWORD On_SYNCPUTITEM(TCmd *pCmd, int pnum)
 {
 	TCmdPItem *p = (TCmdPItem *)pCmd;
+
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_SYNCPUTITEM.\n");
+#endif
 
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
@@ -1693,6 +1872,10 @@ DWORD On_SYNCPUTITEM(TCmd *pCmd, int pnum)
 DWORD On_RESPAWNITEM(TCmd *pCmd, int pnum)
 {
 	TCmdPItem *p = (TCmdPItem *)pCmd;
+
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "On_RESPAWNITEM.\n");
+#endif
 
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
@@ -2271,6 +2454,10 @@ DWORD On_CHANGEPLRITEMS(TCmd *pCmd, int pnum)
 {
 	TCmdChItem *p = (TCmdChItem *)pCmd;
 
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_CHANGEPLRITEMS.\n");
+#endif
+
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
 	else if (pnum != myplr)
@@ -2282,6 +2469,10 @@ DWORD On_CHANGEPLRITEMS(TCmd *pCmd, int pnum)
 DWORD On_DELPLRITEMS(TCmd *pCmd, int pnum)
 {
 	TCmdDelItem *p = (TCmdDelItem *)pCmd;
+
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_DELPLRITEMS.\n");
+#endif
 
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));
@@ -2306,6 +2497,10 @@ DWORD On_PLRLEVEL(TCmd *pCmd, int pnum)
 DWORD On_DROPITEM(TCmd *pCmd, int pnum)
 {
 	TCmdPItem *p = (TCmdPItem *)pCmd;
+
+#ifdef DEBUG_MIKEY
+        fprintf(stderr, "On_DROPITEM.\n");
+#endif
 
 	if (gbBufferMsgs == 1)
 		msg_send_packet(pnum, p, sizeof(*p));

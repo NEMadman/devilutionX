@@ -51,6 +51,7 @@ void OffsetSTextY(int y, int yo);
 void AddSText(int x, int y, int j, char *str, char clr, int sel);
 void StoreAutoPlace();
 void S_StartSmith();
+void S_StartCheat();
 void S_ScrollSBuy(int idx);
 void PrintStoreItem(ItemStruct *x, int l, char iclr);
 void S_StartSBuy();
@@ -95,6 +96,7 @@ void STextDown();
 void STextPrior();
 void STextNext();
 void S_SmithEnter();
+void S_CheatEnter();
 void SetGoldCurs(int pnum, int i);
 void SetSpdbarGoldCurs(int pnum, int i);
 void TakePlrsMoney(int cost);
@@ -131,6 +133,7 @@ void S_DrunkEnter();
 void STextEnter();
 void CheckStoreBtn();
 void ReleaseStoreBtn();
+void ScrollStore(short wheel);
 
 /* rdata */
 

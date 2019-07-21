@@ -3599,13 +3599,101 @@ void MakePlrPath(int pnum, int xx, int yy, BOOL endspace)
 	plr[pnum].walkpath[path] = WALK_NONE;
 }
 
+void DumpRingInv(int pnum)
+{
+	int i;
+
+	for (i = 0; i < plr[pnum]._pNumInv; i++)
+	{
+		fprintf(stderr, "Inventory Item #%u.\n", i);
+		fprintf(stderr, "       _iSeed: 0x%08x\n", plr[myplr].InvList[i]._iSeed);
+		fprintf(stderr, " _iCreateInfo: 0x%04x\n", plr[myplr].InvList[i]._iCreateInfo);
+		fprintf(stderr, "       _itype: 0x%08x\n", plr[myplr].InvList[i]._itype);
+		fprintf(stderr, "          _ix: 0x%08x\n", plr[myplr].InvList[i]._ix);
+		fprintf(stderr, "          _iy: 0x%08x\n", plr[myplr].InvList[i]._iy);
+		fprintf(stderr, "   _iAnimFlag: %u\n", plr[myplr].InvList[i]._iAnimFlag);
+		fprintf(stderr, "   _iAnimData: 0x%08x\n", plr[myplr].InvList[i]._iAnimData);
+		fprintf(stderr, "    _iAnimLen: 0x%08x\n", plr[myplr].InvList[i]._iAnimLen);
+		fprintf(stderr, "  _iAnimFrame: 0x%08x\n", plr[myplr].InvList[i]._iAnimFrame);
+		fprintf(stderr, "  _iAnimWidth: 0x%08x\n", plr[myplr].InvList[i]._iAnimWidth);
+		fprintf(stderr, " _iAnimWidth2: 0x%08x\n", plr[myplr].InvList[i]._iAnimWidth2);
+		fprintf(stderr, "        _isin: 0x%08x\n", plr[myplr].InvList[i]._isin);
+		fprintf(stderr, "    _iSelFlag: 0x%08x\n", plr[myplr].InvList[i]._iSelFlag);
+		fprintf(stderr, "   _iPostDraw: %u\n", plr[myplr].InvList[i]._iPostDraw);
+		fprintf(stderr, " _iIdentified: %u\n", plr[myplr].InvList[i]._iIdentified);
+		fprintf(stderr, "    _iMagical: 0x%02x\n", plr[myplr].InvList[i]._iMagical);
+		fprintf(stderr, "       _iName: %s\n", plr[myplr].InvList[i]._iName);
+		fprintf(stderr, "      _iIName: %s\n", plr[myplr].InvList[i]._iIName);
+		fprintf(stderr, "        _iLoc: 0x%02x\n", plr[myplr].InvList[i]._iLoc);
+		fprintf(stderr, "      _iClass: 0x%02x\n", plr[myplr].InvList[i]._iClass);
+		fprintf(stderr, "       _iCurs: 0x%08x\n", plr[myplr].InvList[i]._iCurs);
+		fprintf(stderr, "      _ivalue: 0x%08x\n", plr[myplr].InvList[i]._ivalue);
+		fprintf(stderr, "     _iIvalue: 0x%08x\n", plr[myplr].InvList[i]._iIvalue);
+		fprintf(stderr, "     _iMinDam: 0x%08x\n", plr[myplr].InvList[i]._iMinDam);
+		fprintf(stderr, "     _iMaxDam: 0x%08x\n", plr[myplr].InvList[i]._iMaxDam);
+		fprintf(stderr, "         _iAC: 0x%08x\n", plr[myplr].InvList[i]._iAC);
+		fprintf(stderr, "      _iFlags: 0x%08x\n", plr[myplr].InvList[i]._iFlags);
+		fprintf(stderr, "     _iMiscId: 0x%08x\n", plr[myplr].InvList[i]._iMiscId);
+		fprintf(stderr, "      _iSpell: 0x%08x\n", plr[myplr].InvList[i]._iSpell);
+		fprintf(stderr, "    _iCharges: 0x%08x\n", plr[myplr].InvList[i]._iCharges);
+		fprintf(stderr, " _iMaxCharges: 0x%08x\n", plr[myplr].InvList[i]._iMaxCharges);
+		fprintf(stderr, " _iDurability: 0x%08x\n", plr[myplr].InvList[i]._iDurability);
+		fprintf(stderr, "     _iMaxDur: 0x%08x\n", plr[myplr].InvList[i]._iMaxDur);
+		fprintf(stderr, "      _iPLDam: 0x%08x\n", plr[myplr].InvList[i]._iPLDam);
+		fprintf(stderr, "    _iPLToHit: 0x%08x\n", plr[myplr].InvList[i]._iPLToHit);
+		fprintf(stderr, "       _iPLAC: 0x%08x\n", plr[myplr].InvList[i]._iPLAC);
+		fprintf(stderr, "      _iPLStr: 0x%08x\n", plr[myplr].InvList[i]._iPLStr);
+		fprintf(stderr, "      _iPLMag: 0x%08x\n", plr[myplr].InvList[i]._iPLMag);
+		fprintf(stderr, "      _iPLDex: 0x%08x\n", plr[myplr].InvList[i]._iPLDex);
+		fprintf(stderr, "      _iPLVit: 0x%08x\n", plr[myplr].InvList[i]._iPLVit);
+		fprintf(stderr, "       _iPLFR: 0x%08x\n", plr[myplr].InvList[i]._iPLFR);
+		fprintf(stderr, "       _iPLLR: 0x%08x\n", plr[myplr].InvList[i]._iPLLR);
+		fprintf(stderr, "       _iPLMR: 0x%08x\n", plr[myplr].InvList[i]._iPLMR);
+		fprintf(stderr, "     _iPLMana: 0x%08x\n", plr[myplr].InvList[i]._iPLMana);
+		fprintf(stderr, "       _iPLHP: 0x%08x\n", plr[myplr].InvList[i]._iPLHP);
+		fprintf(stderr, "   _iPLDamMod: 0x%08x\n", plr[myplr].InvList[i]._iPLDamMod);
+		fprintf(stderr, "   _iPLGetHit: 0x%08x\n", plr[myplr].InvList[i]._iPLGetHit);
+		fprintf(stderr, "    _iPLLight: 0x%08x\n", plr[myplr].InvList[i]._iPLLight);
+		fprintf(stderr, "  _iSplLvlAdd: 0x%02x\n", plr[myplr].InvList[i]._iSplLvlAdd);
+		fprintf(stderr, "    _iRequest: 0x%02x\n", plr[myplr].InvList[i]._iRequest);
+		fprintf(stderr, "        _iUid: 0x%08x\n", plr[myplr].InvList[i]._iUid);
+		fprintf(stderr, "    _iFMinDam: 0x%08x\n", plr[myplr].InvList[i]._iFMinDam);
+		fprintf(stderr, "    _iFMaxDam: 0x%08x\n", plr[myplr].InvList[i]._iFMaxDam);
+		fprintf(stderr, "    _iLMinDam: 0x%08x\n", plr[myplr].InvList[i]._iLMinDam);
+		fprintf(stderr, "    _iLMaxDam: 0x%08x\n", plr[myplr].InvList[i]._iLMaxDam);
+		fprintf(stderr, "     _iPLEnAc: 0x%08x\n", plr[myplr].InvList[i]._iPLEnAc);
+		fprintf(stderr, "   _iPrePower: 0x%02x\n", plr[myplr].InvList[i]._iPrePower);
+		fprintf(stderr, "   _iSufPower: 0x%02x\n", plr[myplr].InvList[i]._iSufPower);
+		fprintf(stderr, "      _iVAdd1: 0x%08x\n", plr[myplr].InvList[i]._iVAdd1);
+		fprintf(stderr, "     _iVMult1: 0x%08x\n", plr[myplr].InvList[i]._iVMult1);
+		fprintf(stderr, "      _iVAdd2: 0x%08x\n", plr[myplr].InvList[i]._iVAdd2);
+		fprintf(stderr, "     _iVMult2: 0x%08x\n", plr[myplr].InvList[i]._iVMult2);
+		fprintf(stderr, "     _iMinStr: 0x%02x\n", plr[myplr].InvList[i]._iMinStr);
+		fprintf(stderr, "     _iMinMag: 0x%02x\n", plr[myplr].InvList[i]._iMinMag);
+		fprintf(stderr, "     _iMinDex: 0x%02x\n", plr[myplr].InvList[i]._iMinDex);
+		fprintf(stderr, "   _iStatFlag: %u\n", plr[myplr].InvList[i]._iStatFlag);
+		fprintf(stderr, "        IDidx: 0x%08x\n", plr[myplr].InvList[i].IDidx);
+		fprintf(stderr, "     offs016C: 0x%08x\n", plr[myplr].InvList[i].offs016C);
+	}
+}
+
 void CheckPlrSpell()
 {
 	BOOL addflag;
 	int rspell, sd, sl;
 
+#ifdef DEBUG_MIKEY
+    fprintf(stderr, "CheckPlrSpell entered.\n");
+    DumpRingInv(myplr);
+#endif
+
 	if ((DWORD)myplr >= MAX_PLRS) {
 		app_fatal("CheckPlrSpell: illegal player %d", myplr);
+	}
+
+	if (leveltype == DTYPE_TOWN) {
+		StartStore(STORE_CHEAT);
+		return;
 	}
 
 	rspell = plr[myplr]._pRSpell;

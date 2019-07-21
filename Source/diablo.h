@@ -4,6 +4,8 @@
 
 #include "../types.h"
 
+#undef DEBUG_MIKEY
+
 //#ifdef __cplusplus
 //extern "C" {
 //#endif
@@ -95,6 +97,8 @@ extern BOOL gbRunGame;
 extern int glMid3Seed[NUMLEVELS];
 extern BOOL gbRunGameResult;
 extern int zoomflag; // weak
+extern int enterPremiumFlag;
+extern int premiumItemLevel;
 extern BOOL gbProcessPlayers;
 extern int glEndSeed[NUMLEVELS];
 extern BOOL gbLoadGame;
@@ -114,6 +118,7 @@ extern int PauseMode;         // weak
 extern char sgbMouseDown;     // weak
 extern int color_cycle_timer; // weak
 
+void DumpRingInv(int pnum);
 void FreeGameMem();
 BOOL StartGame(BOOL bNewGame, BOOL bSinglePlayer);
 void run_game_loop(unsigned int uMsg);
@@ -148,6 +153,10 @@ void game_loop(BOOL bStartup);
 void game_logic();
 void timeout_cursor(BOOL bTimeout);
 void diablo_color_cyc_logic();
+void dumpstack(void);
+void dump_pitem(TCmdPItem *pI);
+BOOL MouseWheelScroll(short wheel);
+
 
 /* data */
 
